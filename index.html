@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Bike Game</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      background: #444;
+      border: 4px solid white;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Bike Dodger Game</h1>
+  <p>Use ← and → arrow keys to move. Press Enter to start or restart.</p>
+
+  <canvas id="game" width="400" height="600"></canvas>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    let player = {
+      x: 180,
+      y: 500,
+      width: 40,
+      height: 60,
+      speed: 6
+    };
+
+    let obstacles = [];
+    let score = 0;
+    let gameOver = true;
+    let keys = {};
+
+    document.addEventListener("keydown", function (e) {
+      keys[e.key] = true;
+
+      if ((e.key === "Enter" || e.key === " ") && gameOver) {
+        restart();
+      }
+    });
+
+    document.addEventListener("keyup", function (e) {
+      keys[e.key] = false;
+    });
+
+    function restart() {
+      player.x = canvas.width / 2 - player.width / 2;
+      obstacles = [];
+      score = 0;
+      gameOver = false;
+      requestAnimationFrame(loop);
+    }
+
+    function spawnObstacle() {
+      const width = 50;
+      const x = Math.random() * (canvas.width - width);
+
+      obstacles.push({
+        x: x,
+        y: -80,
+        width: width,
+        height: 70
+      });
+    }
+
+    function update() {
+      if (keys["ArrowLeft"]) {
+        player.x -= player.speed;
+      }
+
+      if (keys["ArrowRight"]) {
+        player.x += player.speed;
+      }
+
+      if (player.x < 0) {
+        player.x = 0;
+      }
+
+      if (player.x > canvas.width - player.width) {
+        player.x = canvas.width - player.width;
+      }
+
+      if (Math.random() < 0.02) {
+        spawnObstacle();
+      }
+
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].y += 3 + score / 1000;
+
+        if (obstacles[i].y > canvas.height) {
+          obstacles.splice(i, 1);
+          score += 10;
+        }
+      }
+
+      for (let obstacle of obstacles) {
+        if (
+          player.x < obstacle.x + obstacle.width &&
+          player.x + player.width > obstacle.x &&
+          player.y < obstacle.y + obstacle.height &&
+          player.y + player.height > obstacle.y
+        ) {
+          gameOver = true;
+        }
+      }
+    }
+
+    function drawBike(x, y, width, height, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, width, height);
+
+      ctx.fillStyle = "black";
+      ctx.fillRect(x + 8, y + 8, width - 16, height - 16);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Road center line
+      ctx.strokeStyle = "yellow";
+      ctx.setLineDash([20, 20]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, canvas.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Player bike
+      drawBike(player.x, player.y, player.width, player.height, "cyan");
+
+      // Obstacles
+      ctx.fillStyle = "orange";
+
+      for (let obstacle of obstacles) {
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+      }
+
+      // Score
+      ctx.fillStyle = "white";
+      ctx.font = "24px Arial";
+      ctx.fillText("Score: " + score, 10, 30);
+
+      // Game over screen
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "white";
+        ctx.font = "36px Arial";
+        ctx.textAlign = "center";
+
+        ctx.fillText("Game Over", canvas.width / 2, 280);
+
+        ctx.font = "20px Arial";
+        ctx.fillText("Press Enter to Start", canvas.width / 2, 330);
+
+        ctx.textAlign = "left";
+      }
+    }
+
+    function loop() {
+      if (!gameOver) {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      } else {
+        draw();
+      }
+    }
+
+    draw();
+  </script>
+
+</body>
+</html>
